@@ -1,5 +1,6 @@
 // @refresh reset
 
+import { statusBar } from 'expo-status-bar';
 import { GiftedChat } from 'react-native-gifted-chat';
 import AsyncStorage from '@react-native-community/async-storage';
 import React, { useState, useEffect, useCallback } from 'react';
@@ -8,15 +9,16 @@ import firebase from "firebase/app";
 import 'firebase/firestore';
 
 
-
 const firebaseConfig = {
   apiKey: "AIzaSyBoRzAE-Jxy3S4uqQAqlhLxYm4PSw4znYw",
   authDomain: "react-native-chat-a1787.firebaseapp.com",
+  databaseURL: "https://react-native-chat-a1787-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "react-native-chat-a1787",
   storageBucket: "react-native-chat-a1787.appspot.com",
   messagingSenderId: "837362959957",
   appId: "1:837362959957:web:cfd825c399c8140d8db6dc"
 };
+
 
 if (firebase.apps.length === 0) {
   firebase.initializeApp(firebaseConfig)
@@ -33,72 +35,72 @@ export default function App() {
   const [messages, setMessages] = useState([])
 
   useEffect(() => {
-      readUser()
-      const unsubscribe = chatsRef.onSnapshot((querySnapshot) => {
-          const messagesFirestore = querySnapshot
-              .docChanges()
-              .filter(({ type }) => type === 'added')
-              .map(({ doc }) => {
-                  const message = doc.data()
-                  //createdAt is firebase.firestore.Timestamp instance
-                  //https://firebase.google.com/docs/reference/js/firebase.firestore.Timestamp
-                  return { ...message, createdAt: message.createdAt.toDate() }
-              })
-              .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-          appendMessages(messagesFirestore)
-      })
-      return () => unsubscribe()
+    readUser()
+    const unsubscribe = chatsRef.onSnapshot((querySnapshot) => {
+      const messagesFirestore = querySnapshot
+        .docChanges()
+        .filter(({ type }) => type === 'added')
+        .map(({ doc }) => {
+          const message = doc.data()
+          //createdAt is firebase.firestore.Timestamp instance
+          //https://firebase.google.com/docs/reference/js/firebase.firestore.Timestamp
+          return { ...message, createdAt: message.createdAt.toDate() }
+        })
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      appendMessages(messagesFirestore)
+    })
+    return () => unsubscribe()
   }, [])
 
   const appendMessages = useCallback(
-      (messages) => {
-          setMessages((previousMessages) => GiftedChat.append(previousMessages, messages))
-      },
-      [messages]
+    (messages) => {
+      setMessages((previousMessages) => GiftedChat.append(previousMessages, messages))
+    },
+    [messages]
   )
 
   async function readUser() {
-      const user = await AsyncStorage.getItem('user')
-      if (user) {
-          setUser(JSON.parse(user))
-      }
+    const user = await AsyncStorage.getItem('user')
+    if (user) {
+      setUser(JSON.parse(user))
+    }
   }
   async function handlePress() {
-      const _id = Math.random().toString(36).substring(7)
-      const user = { _id, name }
-      await AsyncStorage.setItem('user', JSON.stringify(user))
-      setUser(user)
+    const _id = Math.random().toString(36).substring(7)
+    const user = { _id, name }
+    await AsyncStorage.setItem('user', JSON.stringify(user))
+    setUser(user)
   }
   async function handleSend(messages) {
-      const writes = messages.map((m) => chatsRef.add(m))
-      await Promise.all(writes)
+    const writes = messages.map((m) => chatsRef.add(m))
+    await Promise.all(writes)
   }
 
   if (!user) {
-      return (
-          <View style={styles.container}>
-              <TextInput style={styles.input} placeholder="Enter your name" value={name} onChangeText={setName} />
-              <Button onPress={handlePress} title="Enter the chat" />
-          </View>
-      )
+    return (
+      <View style={styles.container}>
+        <TextInput style={styles.input} placeholder="Enter your name" value={name} onChangeText={setName} />
+        <Button onPress={handlePress} title="Enter the chat" />
+      </View>
+    )
   }
   return <GiftedChat messages={messages} user={user} onSend={handleSend} />
 }
 
 const styles = StyleSheet.create({
   container: {
-      flex: 1,
-      backgroundColor: '#fff',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 30,
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 30,
   },
   input: {
-      height: 50,
-      width: '100%',
-      borderWidth: 1,
-      padding: 15,
-      marginBottom: 20,
-      borderColor: 'gray',
+    height: 50,
+    width: '100%',
+    borderWidth: 1,
+    padding: 15,
+    marginBottom: 20,
+    borderColor: 'gray',
   },
 })
